@@ -24,4 +24,13 @@
   (test-->> red
             (term (add1 (λ x x))) 
             (term (err 1)))
+  (test-->> red
+            (term (5 6))
+            (term (err 5)))
+  (test-->> red
+            (term (/ ((λ x
+                        (+ (/ 1 x) (err 2)))
+                      7)
+                     2))
+            (term (err 2)))
   )
