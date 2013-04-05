@@ -1,5 +1,6 @@
 #lang racket
 (require redex)
+(require "error-iswim-test.rkt")
 
 (define-language iswim
   ((M N L K) X (λ X M) (M M) b (o2 M M) (o1 M) (err b))
@@ -74,4 +75,4 @@
         (side-condition 
          (not (equal? (term o) (term err)))))))
 
-(current-traced-metafunctions 'all)
+;(current-traced-metafunctions 'all)
