@@ -60,14 +60,14 @@
    (--> (in-hole E ((λ X M) V))
         (in-hole E (subst M X V))
         βv)
-   (--> (in-hole E (o1 (λ X M)))
-        (err 1)
-        δerr)
    (--> (in-hole E (err b))
         (err b)
         err
         (side-condition 
          (not (equal? (term hole) (term E)))))
+   (--> (in-hole E (o V ... (λ X M_1) M_2 ...))
+        (err 1)
+        δerr)
    (--> (in-hole E (o b ...))
         (in-hole E (δ (o b ...)))
         δ
