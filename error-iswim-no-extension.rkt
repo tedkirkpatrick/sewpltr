@@ -4,7 +4,7 @@
 (define-language iswim
   ((M N L K) X (λ X M) (M M) b (o2 M M) (o1 M) (err b))
   (o o1 o2)
-  (o1 add1 sub1 iszero err)
+  (o1 add1 sub1 iszero)
   (o2 + - * ** /)
   (b number)
   ((V U W) b X (λ X M) (err b))
@@ -15,7 +15,7 @@
   [(δ (iszero 0)) (λ x (λ y x))]
   [(δ (iszero b)) (λ x (λ y y))]
   [(δ (add1 b)) ,(add1 (term b))]
-  [(δ (err 1)) (err 1)]
+  [(δ (err b)) (err b)]
   [(δ (sub1 b)) ,(sub1 (term b))]
   [(δ (+ b_1 b_2)) ,(+ (term b_1) (term b_2))]
   [(δ (- b_1 b_2)) ,(- (term b_1) (term b_2))]
@@ -72,6 +72,6 @@
         (in-hole E (δ (o b ...)))
         δ
         (side-condition 
-         (not (equal? (term hole) (term E)))))))
+         (not (equal? (term o) (term err)))))))
 
 (current-traced-metafunctions 'all)
