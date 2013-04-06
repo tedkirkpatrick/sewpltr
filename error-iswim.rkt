@@ -1,5 +1,4 @@
 #lang racket
-(current-load-relative-directory "/Users/ted/Documents/Research/Scheme")
 (require "compiled/chapter-16_rkt.zo")
 (require "error-iswim-test.rkt")
 

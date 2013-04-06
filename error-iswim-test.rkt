@@ -33,4 +33,5 @@
                       7)
                      2))
             (term (err 2)))
+  (test-results)
   )
