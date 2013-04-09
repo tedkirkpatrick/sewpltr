@@ -1,5 +1,6 @@
 #lang racket
-(require "compiled/iswim_rkt.zo")
+;(require "compiled/iswim_rkt.zo")
+(require "iswim.rkt")
 
 (define-extended-language handler-iswim
   iswim
@@ -9,7 +10,7 @@
 
 (define-metafunction/extension subst iswim
   [(subst-handler (catch M_1 with (λ X_1 M_2)) X_2 M_3)
-   (catch (subst-err M_1 X_2 M_3) with (subst (λ X_1 M_2) X_2 M_3))]
+   (catch (subst-handler M_1 X_2 M_3) with (subst-handler (λ X_1 M_2) X_2 M_3))]
   )
 
 (define handler-red
@@ -18,7 +19,7 @@
    handler-iswim
    ; Override βv rule in iswim
    (--> (in-hole E ((λ X M) V))
-        (in-hole E (subst-handler (M X V)))
+        (in-hole E (subst-handler M X V))
         βb)
    (--> (in-hole E (catch (throw b) with (λ X M)))
         (in-hole E ((λ X M) b))
