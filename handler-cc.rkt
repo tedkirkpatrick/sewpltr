@@ -1,5 +1,6 @@
 #lang racket
 (require redex)
+(require "cc-test.rkt")
 
 (define-language handler-iswim
   ((M N L K) X (λ X M) (M M) b (o2 M M) (o1 M) (throw b) (catch M_1 with (λ X M_2)))
@@ -15,7 +16,7 @@
 (define-metafunction handler-iswim
   δ : M -> M
   [(δ (iszero 0)) (λ x (λ y x))]
-  [(δ (iszero b)) (λ x (λ y y))]
+  [(δ (iszero b)) (λ x (λ y y)) ]
   [(δ (add1 b)) ,(add1 (term b))]
   [(δ (sub1 b)) ,(sub1 (term b))]
   [(δ (+ b_1 b_2)) ,(+ (term b_1) (term b_2))]
@@ -73,7 +74,7 @@
    (--> (((λ X M) V) (E ...))
         ((subst M X V) (E ...))
         ccfiv
-        (side-condition (begin (display (term M)) (display (term (E ...))) #t)))
+        )
    (--> ((o b ...) (E ...))
         ((δ (o b ...)) (E ...))
         ccffi)
@@ -81,10 +82,31 @@
         ((U V) (E ...))
         cc4)
    (--> (V (E ... (hole N)))
-        ((V N) (E...))
+        ((V N) (E ...))
         cc5)
    (--> (V_n (E ... (o V ... hole N ...)))
         ((o V ... V_n N ...) (E ...))
         cc6)
          ))
-(current-traced-metafunctions 'all)
+
+(define test-it
+  (lambda () (run-tests cc-red)))
+
+
+(define coverage-values
+  (lambda ()
+    (let ([handler-coverage (make-coverage cc-red)]
+          [δ-coverage (make-coverage δ)]
+          [subst-coverage (make-coverage subst)]
+          [subst-var-coverage (make-coverage subst-var)])
+      (relation-coverage (list handler-coverage δ-coverage subst-coverage subst-var-coverage))
+      (test-it)
+      (list
+       (covered-cases handler-coverage)
+       (covered-cases δ-coverage)
+       (covered-cases subst-coverage)
+       (covered-cases subst-var-coverage)
+       )
+      )))
+
+;(current-traced-metafunctions 'all)
