@@ -1,6 +1,7 @@
 #lang racket
 (require redex)
 (require "cc-test.rkt")
+(require "handler-red-test.rkt")
 
 (define-language handler-iswim
   ((M N L K) X (λ X M) (M M) b (o2 M M) (o1 M) (throw b) (catch M_1 with (λ X M_2)))
@@ -15,9 +16,9 @@
 
 (define-metafunction handler-iswim
   δ : M -> M
-  [(δ (o1 (throw b))) (throw b)]
-  [(δ (o2 (throw b) any)) (throw b)]
-  [(δ (o2 b (throw b))) (throw b)]
+;  [(δ (o1 (throw b))) (throw b)]
+;  [(δ (o2 (throw b) any)) (throw b)]
+;  [(δ (o2 b (throw b))) (throw b)]
   [(δ (iszero 0)) (λ x (λ y x))]
   [(δ (iszero b)) (λ x (λ y y)) ]
   [(δ (add1 b)) ,(add1 (term b))]
@@ -74,17 +75,22 @@
         cc1
         (side-condition
          (not (redex-match handler-iswim V (term M)))))
-   (--> ((V M) (E ...))
-        (M (E ... (V hole)))
+   (--> (((λ X N) M) (E ...))
+        (M (E ... ((λ X N) hole)))
         cc2
         (side-condition
          (not (redex-match handler-iswim V (term M)))))
+   (--> ((b M) (E ...))
+        ((throw b)(E ...))
+        cc2-num)
+   (--> ((X M) (E ...))
+        ((throw 0) (E ...))
+        cc2-var)
    (--> ((o V ... M N ...) (E ...))
         (M (E ... (o V ... hole N ...)))
         cc3
         (side-condition
          (not (redex-match handler-iswim V (term M)))))
-;        )
    (--> (((λ X M) V) (E ...))
         ((subst M X V) (E ...))
         ccfiv
@@ -115,11 +121,11 @@
    (--> (V (E ... (catch hole with (λ X N))))
         (V (E ...))
         cc10)
-   (--> ((throw b) (E ... (catch F with (λ X N))))
-        ((throw b) (E ... (catch hole with (λ X N))))
-        cc11
-        (side-condition
-         (not (redex-match handler-iswim F (term hole)))))
+;   (--> ((throw b) (E ... (catch F with (λ X N))))
+;        ((throw b) (E ... (catch hole with (λ X N))))
+;        cc11
+;        (side-condition
+;         (not (redex-match handler-iswim F (term hole)))))
    (--> ((throw b) (E ... (catch hole with (λ X N))))
         (((λ X N) b) (E ...))
         cc12)
@@ -131,9 +137,15 @@
   (lambda (tag)
     (begin (when dbc-print (display tag)) #t)))
               
-(define test-it
+(define test-basics
   (lambda () (run-tests cc-red)))
 
+(define (test-catch)
+  (handler-red-test cc-red cc-test))
+
+(define (test-all)
+  (test-basics)
+  (test-catch))
 
 (define coverage-values
   (lambda (test)
@@ -151,7 +163,9 @@
        )
       )))
 
-(define cover-it (lambda() (coverage-values test-it)))
+(define cover-basics (lambda() (coverage-values test-basics)))
+(define cover-catch (lambda () (coverage-values test-catch)))
+(define cover-all (lambda () (coverage-values test-all)))
 
 (define single-test
   (lambda (tm)
@@ -164,3 +178,16 @@
     (single-test (term (((λ x (λ y (+ y x))) 2) ((hole 3)))))))
 
 (define (tt2) (single-test (term ((+ 1 (+ 2 (/ 4 0)))()))))
+
+(define (apply*? red tm)
+  (let [(res (apply-reduction-relation* red tm))]
+    (cond [(and
+            (equal? (length res) 1)
+            (redex-match handler-iswim V (caar res))
+            (null? (cadar res))) res]
+          [else #f])))
+
+(define (generated-tm? red size)
+  (let [(tm (generate-term handler-iswim M size))]
+    (printf "~v\n" tm)
+    (apply*? red (term (,tm ())))))

@@ -1,5 +1,4 @@
 #lang racket
-;(require "compiled/iswim_rkt.zo")
 (require "iswim.rkt")
 (require "handler-red-test.rkt")
 
@@ -40,6 +39,8 @@
         (side-condition
          (not (equal? (term hole) (term F)))))
    ))
+
+(define (one-test red tm v)
+  (test-->> red tm v))
    
-(define test-it (lambda () (handler-red-test handler-red)))
-;(current-traced-metafunctions 'all)
+(define test-catch (lambda () (handler-red-test handler-red one-test)))
