@@ -1,7 +1,7 @@
 #lang racket
 (require redex)
 
-(provide run-tests)
+(provide run-tests cc-test)
 
 (define cc-test
   (lambda (red tm val)
@@ -26,6 +26,8 @@
     (cc-test red (term (* 4 2)) 8)
     (cc-test red (term (** 4 2)) 16)
     ; Test subst rules 
-    (cc-test red (term (((λ x ((λ x 1) x)) 2))) 1)
-    (cc-test red (term ((((λ x (λ y (+ y x))) 2) 3))) 5)
+    (cc-test red (term ((λ x ((λ x 1) x)) 2)) 1)
+    (cc-test red (term (((λ x (λ y (+ y x))) 2) 3)) 5)
+    ; Test subst-var rules
+    ;(cc-test red (term (
     (test-results)))
