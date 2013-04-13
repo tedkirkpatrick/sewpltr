@@ -10,7 +10,7 @@
   (o2 + - * ** /)
   (b number)
   ((V U W) b X (λ X M))
-  (Elt ::= b X) ; For randomly-generted terms
+  (Elt b X) ; For randomly-generated free variables
   (F hole (V F) (F M) (o V ... F M ...))
   (E hole (V E) (E M) (o V ... E M ...) (catch E with (λ X M)))
   ((X Y Z) variable-not-otherwise-mentioned))
@@ -95,12 +95,13 @@
         ((subst M X V) (E ...))
         ccfiv
         )
+   ; Look up randomly-generated free variables
    (--> ((o b ... X Elt ...) (E ...))
         ((o b ... (δ X) Elt ...) (E ...))
         fvfill)
-   (--> ((o b ... (λ X M) N ...) (E ...))
-        ((throw ,(length (term (b ...)))) (E ...))
-        operr)
+   (--> ((o Elt ... (λ X M) N ...) (E ...))
+        ((throw ,(length (term (Elt ...)))) (E ...))
+        opargerr)
    (--> ((o b ...) (E ...))
         ((δ (o b ...)) (E ...))
         ccffi)
@@ -173,15 +174,21 @@
 (define cover-catch (lambda () (coverage-values test-catch)))
 (define cover-all (lambda () (coverage-values test-all)))
 
-(define single-test
-  (lambda (tm)
-    (caching-enabled? #f)
-    (current-traced-metafunctions 'all)
-    (apply-reduction-relation/tag-with-names cc-red tm)))
+(define saved (term ())) ; will be overridden
+
+(define (single-test tm)
+  (caching-enabled? #f)
+  (current-traced-metafunctions 'all)
+  (let [(res (apply-reduction-relation/tag-with-names cc-red tm))]
+    (set! saved res)
+    res))
 
 (define tt1
   (lambda ()
     (single-test (term (((λ x (λ y (+ y x))) 2) ((hole 3)))))))
+
+(define (tt2)
+  (single-test (term (((λ i (+ (throw 0) k)) (- s (λ T F))) ()))))
 
 (define (apply*? red tm)
   (let [(res (apply-reduction-relation* red tm))]
@@ -196,4 +203,17 @@
 (define (generated-tm? red size)
   (let [(tm (generate-term handler-iswim M size))]
     (printf "~v\n" tm)
+    (set! saved tm)
+    (apply*? red (term (,tm ())))))
+
+(define (traces-last) (traces cc-red (term (,saved ()))))
+
+; A language without throws (for testing)
+(define-extended-language throwless handler-iswim
+  ((M N L K) X (λ X M) (M M) b (o2 M M) (o1 M)))
+
+(define (generated-nothrow? red size)
+  (let [(tm (generate-term throwless M size))]
+    (printf "~v\n" tm)
+    (set! saved tm)
     (apply*? red (term (,tm ())))))
