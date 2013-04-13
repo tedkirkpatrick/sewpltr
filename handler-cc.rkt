@@ -107,16 +107,25 @@
 ;        (side-condition
 ;         (equal? (term (δ M)) (term (throw b)))))
    (--> ((throw b) (E ... F))
-        ((throw b) (hole))
-        cc8
+        ((throw b) (E ...))
+        cc8)
+   (--> ((catch M with (λ X N)) (E ...))
+        (M (E ... (catch hole with (λ X N))))
+         cc9)
+   (--> (V (E ... (catch hole with (λ X N))))
+        (V (E ...))
+        cc10)
+   (--> ((throw b) (E ... (catch F with (λ X N))))
+        ((throw b) (E ... (catch hole with (λ X N))))
+        cc11
         (side-condition
-         (not (redex-match handler-iswim hole (term (E ...))))))
-   (--> ((throw b) (F))
-        ((throw b) ())
-        cc8-F)
+         (not (redex-match handler-iswim F (term hole)))))
+   (--> ((throw b) (E ... (catch hole with (λ X N))))
+        (((λ X N) b) (E ...))
+        cc12)
    ))
 
-(define dbc-print #t)
+(define dbc-print #f)
 
 (define dbc
   (lambda (tag)
