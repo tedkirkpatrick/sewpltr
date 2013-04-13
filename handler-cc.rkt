@@ -10,15 +10,13 @@
   (o2 + - * ** /)
   (b number)
   ((V U W) b X (λ X M))
+  (Elt ::= b X) ; For randomly-generted terms
   (F hole (V F) (F M) (o V ... F M ...))
   (E hole (V E) (E M) (o V ... E M ...) (catch E with (λ X M)))
   ((X Y Z) variable-not-otherwise-mentioned))
 
 (define-metafunction handler-iswim
   δ : M -> M
-;  [(δ (o1 (throw b))) (throw b)]
-;  [(δ (o2 (throw b) any)) (throw b)]
-;  [(δ (o2 b (throw b))) (throw b)]
   [(δ (iszero 0)) (λ x (λ y x))]
   [(δ (iszero b)) (λ x (λ y y)) ]
   [(δ (add1 b)) ,(add1 (term b))]
@@ -29,6 +27,8 @@
   [(δ (** b_1 b_2)) ,(expt (term b_1) (term b_2))]
   [(δ (/ b 0)) (throw b)]
   [(δ (/ b_1 b_2)) ,(/ (term b_1) (term b_2))]
+  ; For randomly-generated terms, all free variables are bound to 1
+  [(δ X) 1]
   )
 
 (define-metafunction handler-iswim
@@ -51,14 +51,14 @@
   ;; 3. replace X_1 with any_1
   [(subst X_1 X_1 any_1) any_1
     (side-condition (dbc "replace var\n"))]
+  ;; 6. Substitute into a catch expression
+  [(subst (catch M_1 with (λ X_2 M_2)) X_3 M_3)
+   (catch (subst M_1 X_3 M_3) with (subst (λ X_2 M_2) X_3 M_3))]
   ;; 4 and 5. these cases just recur on
   ;; the tree structure of the term
   [(subst (any_2 ...) X_1 any_1)
    ((subst any_2 X_1 any_1) ...)(side-condition (dbc "list\n"))]
   [(subst any_2 X_1 any_1) any_2 (side-condition (dbc "list element\n"))]
-  ;; 6. Substitute into a catch expression
-  [(subst (catch M_1 with (λ X_2 M_2)) X_3 M_3)
-   (catch (subst M_1 X_3 M_3) with (subst (λ X_2 M_2) X_3 M_3))]
   )
 
 (define-metafunction handler-iswim
@@ -95,6 +95,12 @@
         ((subst M X V) (E ...))
         ccfiv
         )
+   (--> ((o b ... X Elt ...) (E ...))
+        ((o b ... (δ X) Elt ...) (E ...))
+        fvfill)
+   (--> ((o b ... (λ X M) N ...) (E ...))
+        ((throw ,(length (term (b ...)))) (E ...))
+        operr)
    (--> ((o b ...) (E ...))
         ((δ (o b ...)) (E ...))
         ccffi)
@@ -177,13 +183,13 @@
   (lambda ()
     (single-test (term (((λ x (λ y (+ y x))) 2) ((hole 3)))))))
 
-(define (tt2) (single-test (term ((+ 1 (+ 2 (/ 4 0)))()))))
-
 (define (apply*? red tm)
   (let [(res (apply-reduction-relation* red tm))]
     (cond [(and
             (equal? (length res) 1)
-            (redex-match handler-iswim V (caar res))
+            (or
+              (redex-match handler-iswim V (caar res))
+              (redex-match handler-iswim (throw b) (caar res)))
             (null? (cadar res))) res]
           [else #f])))
 

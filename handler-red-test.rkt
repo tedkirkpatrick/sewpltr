@@ -22,6 +22,10 @@
     (test red
           (term (add1 (throw 1)))
           (term (throw 1)))
+    ; Test substitution into catch expression
+    (test red
+          (term ((λ x (catch x with (λ y y))) 2))
+          (term 2))
     ; Fails in handler-iswim but succeeds in CC version
     (test red
           (term (catch (+ 1 (+ 2 (catch (+ 1 (throw 44)) with (λ x x)))) with (λ x 222)))
