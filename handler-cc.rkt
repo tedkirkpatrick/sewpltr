@@ -138,6 +138,8 @@
         cc12)
    ))
 
+; ------------  Testing tools --------------
+
 (define dbc-print #f)
 
 (define dbc
