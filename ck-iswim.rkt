@@ -1,6 +1,7 @@
 #lang racket
 (require redex)
 (require "iswim.rkt")
+(require "basic-iswim-test.rkt")
 
 (define-extended-language ck-iswim
   iswim
@@ -29,4 +30,14 @@
         (N (op (V U ... o)   (L ...) κ))
         ck6)
    ))
+
+; ------------- Testing tools -------------
+
+(define (run-ck-test tm val)
+  (test-->> ck-red
+            (term (,tm mt))
+            (term (,val mt))))
+
+(define (test-basics)
+  (run-basic-tests run-ck-test))
     

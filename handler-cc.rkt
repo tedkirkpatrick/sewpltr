@@ -1,6 +1,6 @@
 #lang racket
 (require redex)
-(require "cc-test.rkt")
+(require "basic-iswim-test.rkt")
 (require "handler-red-test.rkt")
 
 (define-language handler-iswim
@@ -145,9 +145,15 @@
 (define dbc
   (lambda (tag)
     (begin (when dbc-print (display tag)) #t)))
-              
+
+(define cc-test
+  (lambda (tm val)
+    (test-->> cc-red
+              (term (,tm ()))
+              (term (,val ())))))
+
 (define test-basics
-  (lambda () (run-tests cc-red)))
+  (lambda () (run-basic-tests cc-test)))
 
 (define (test-catch)
   (handler-red-test cc-red cc-test))
