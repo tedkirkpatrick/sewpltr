@@ -2,6 +2,7 @@
 (require redex)
 (require "iswim.rkt")
 (require "basic-iswim-test.rkt")
+(require "set.rkt")
 
 (define-extended-language cek-iswim
   iswim
@@ -54,10 +55,32 @@
         cek7)
    ))
 
+; CEK reduction function that is safe for space
+
+(define (prune-env freevars env)
+  (map (lambda (var) (term (,var (lookup ,var ,env)))) (set-to-list freevars)))
+
+(define-metafunction cek-iswim
+  [(update-free M (Ev ...) X Val) ,(prune-env (term (FV M)) (term ((X Val) Ev ...)))]
+  )
+
+(define cek-space-red
+  (extend-reduction-relation
+   cek-red
+   cek-iswim
+   (--> ((V ε) (fn ((λ X M) ε_x) κ))
+        ((M (update-free M ε_x X (V ε))) κ)
+        cek3
+        (side-condition
+         (not (redex-match cek-iswim X (term V)))))))
+
 ; ------------ Testing tools -------------
 
 (define (run-cek-test tm val)
-  (let [(res (apply-reduction-relation* cek-red
+  (run-test cek-red tm val))
+
+(define (run-test red tm val)
+  (let [(res (apply-reduction-relation* red
                                         (term ((,tm ()) mt))))
         (same? (lambda (res)
                  (and
@@ -68,3 +91,9 @@
 
 (define (test-basics)
   (run-basic-tests run-cek-test))
+
+(define (run-cek-space-test tm val)
+  (run-test cek-space-red tm val))
+
+(define (test-space-basics)
+  (run-basic-tests run-cek-space-test))

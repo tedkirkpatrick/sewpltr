@@ -1,5 +1,6 @@
 #lang racket
 (require redex)
+(require "set.rkt")
 (provide (all-defined-out) (all-from-out redex))
 
 (define-language iswim
@@ -11,6 +12,14 @@
   ((V U W) b X (λ X M))
   (E hole (V E) (E M) (o V ... E M ...))
   ((X Y Z) variable-not-otherwise-mentioned))
+
+(define-metafunction iswim
+  [(FV b) ,(set-empty)]
+  [(FV X) ,(set-singleton (term X))]
+  [(FV (λ X M)) ,(set-diff (term (FV M)) (term (FV X)))]
+  [(FV (M N)) ,(set-union (term ((FV M) (FV N))))]
+  [(FV (o M ...)) ,(set-union (term ((FV M) ...)))]
+  )
 
 (define-metafunction iswim
   [(δ (iszero 0)) (λ x (λ y x))]
