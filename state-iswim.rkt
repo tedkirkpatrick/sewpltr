@@ -1,15 +1,15 @@
 #lang racket
 (require redex)
-(require "iswim.rkt")
+
 (require "set.rkt")
 (require "store.rkt")
-(require "basic-iswim-test.rkt")
-(require "state-iswim-test.rkt")
+
+(require "iswim.rkt")
 
 (define-extended-language state-iswim
   iswim
   ((M N L K) .... (set X M) (seq M M_i ...) (let ((X = M_v) ...) in M))
-  (E .... (set X E))
+  (E .... (set X E))  ; NEED let and seq HERE?
   (St Uninit S)
   )
 
@@ -27,7 +27,7 @@
   [(AV (set X M)) ,(set-union (list (term (AV M)) (set-singleton (term X))))]
   [(AV b) ,(set-empty)]
   [(AV (o M ...)) ,(set-union (term ((AV M) ...)))]
-  [(AV (seq M ...)) ,(set-union (term ((AV M ...))))]
+  [(AV (seq M ...)) ,(set-union (term ((AV M) ...)))]
   [(AV (let ((X = M_v) ...) in M)) ,(set-union (term ((AV M_v) ... (AV M))))]
   )
 
@@ -63,15 +63,16 @@
                      (term X)))
         (side-condition
          (begin (store-update! (term Y) (term V) Store) #t)))
-   (--> ((in-hole E X) S)
+  (--> ((in-hole E X) S)
         ((in-hole E ,(store-lookup (term X) Store)) S)
         cseq)
    (--> ((in-hole E (set X V)) S)
         ((in-hole E ,(update-and-return-prior! (term X) (term V) Store)) S)
         cs!)
-   (--> ((in-hole E (o V ...)) S)
-        ((in-hole E (δ (o V ...))) S)
+   (--> ((in-hole E (o b ...)) S)
+        ((in-hole E (δ (o b ...))) S)
         csffi)
+   ; Implement seq in reduction relation
    (--> ((in-hole E (seq M)) S)
         ((in-hole E M) S)
         seq-last)
@@ -81,6 +82,7 @@
         (fresh Y)
         (side-condition
          (<= 1 (length (term (M_i ...))))))
+   ; Implement let in reduction relation
    (--> ((in-hole E (let () in M)) S)
         ((in-hole E M) S)
         let-empty)
@@ -90,6 +92,8 @@
    ))
 
 ; ------ Testing  tools -----
+(require "basic-iswim-test.rkt")
+(require "state-iswim-test.rkt")
 
 (define (test-AV)
   ; Expressions with no assignable variables
@@ -104,10 +108,8 @@
   (test-equal (term (AV (λ y (set x (add1 y))))) (set-singleton (term x)))
   (test-equal (term (AV (λ x (set x (add1 z))))) (set-empty))
   (test-equal (term (AV ((set x y) (set z q)))) (set-list (term (x z))))
+  ; NEEDS TESTS OF seq AND let
   (test-results))
-
-(define (run-cs-test tm val)
-  (run-test cs-red tm val))
 
 (define (run-test red tm val)
   (let [(res (apply-reduction-relation* red
@@ -119,9 +121,17 @@
     
     (test-predicate same? res)))
 
+(define (run-cs-test tm val)
+  (run-test cs-red tm val))
+
 (define (test-basics)
   (run-basic-tests run-cs-test))
 
 (define (test-state)
   (run-state-tests run-cs-test))
+
+(define (test-all)
+  (printf "AV:     ") (test-AV)
+  (printf "basics: ") (test-basics)
+  (printf "state:  ") (test-state))
 

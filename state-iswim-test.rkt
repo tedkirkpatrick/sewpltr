@@ -15,8 +15,14 @@
   ; Testing let
   (test (term (let ((x = 1) (y = 2)) in (+ x y))) 3)
   (test (term (let () in (+ 1 1))) 2)
-  ; Unspecified behaviour for repeated variables in let
+  ; Note: Unspecified behaviour for repeated variables in let
   
   ; Testing seq, assuming let works
   (test (term (seq (let ((x = 1) (y = 2)) in (seq (set y 4) (set x 5))) (+ x y))) 9)
+  (test (term (seq (let ((x = 1) (y = 2)) in (seq (set y 4) (set x 5) (set y 12))) (+ x y))) 17)
+  
+  (test (term (+ (let ((x = 1)) in (set x 2)) x)) 3)
+  
+  ; Arguments evaluated in left to right order
+  (test (term (let ((x = 1)) in (+ (set x 2) x))) 3)
   (test-results))
