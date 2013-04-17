@@ -9,7 +9,9 @@
 (define-extended-language state-iswim
   iswim
   ((M N L K) .... (set X M) (seq M M_i ...) (let ((X = M_v) ...) in M))
-  (E .... (set X E))  ; NEED let and seq HERE?
+  ; I do not put let and seq in E because the reduction rule converts them to more
+  ; primitive forms, which in turn are in E
+  (E .... (set X E))  
   (St Uninit S)
   )
 
@@ -108,7 +110,11 @@
   (test-equal (term (AV (λ y (set x (add1 y))))) (set-singleton (term x)))
   (test-equal (term (AV (λ x (set x (add1 z))))) (set-empty))
   (test-equal (term (AV ((set x y) (set z q)))) (set-list (term (x z))))
-  ; NEEDS TESTS OF seq AND let
+  
+  ; seq and let
+  (test-equal (term (AV (let ((x = 1) (y = 2)) in (seq (+ 1 2))))) (set-empty))
+  (test-equal (term (AV (let ((x = 1) (y = 2)) in (seq (set x (+ 1 2)) (set y 5)))))
+              (set-list (term (x y))))
   (test-results))
 
 (define (run-test red tm val)
