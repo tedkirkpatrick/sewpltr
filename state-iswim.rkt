@@ -4,16 +4,20 @@
 (require "set.rkt")
 (require "store.rkt")
 (require "basic-iswim-test.rkt")
+(require "state-iswim-test.rkt")
 
 (define-extended-language state-iswim
   iswim
-  ((M N L K) .... (set X M))
+  ((M N L K) .... (set X M) (seq M M_i ...) (let ((X = M_v) ...) in M))
   (E .... (set X E))
   (St Uninit S)
   )
 
 (define-metafunction/extension FV state-iswim
   [(FVs (set X M)) ,(set-union (list (term (FVs M)) (set-singleton (term X))))]
+  [(FVs (seq M ...)) ,(set-union (term ((FVs M) ...)))]
+  [(FVs (let ((X = M_v) ...) in M))
+   ,(set-diff (set-union (term ((FVs M_v) ... (FVs M)))) (set-list (term (X ...))))]
   )
 
 (define-metafunction state-iswim
@@ -23,9 +27,16 @@
   [(AV (set X M)) ,(set-union (list (term (AV M)) (set-singleton (term X))))]
   [(AV b) ,(set-empty)]
   [(AV (o M ...)) ,(set-union (term ((AV M) ...)))]
+  [(AV (seq M ...)) ,(set-union (term ((AV M ...))))]
+  [(AV (let ((X = M_v) ...) in M)) ,(set-union (term ((AV M_v) ... (AV M))))]
   )
 
 (define Store (store-make))
+
+(define (update-and-return-prior! var val store)
+  (begin0
+    (store-lookup var store)
+    (store-update! var val store)))
 
 (define cs-red
   (reduction-relation
@@ -54,20 +65,31 @@
          (begin (store-update! (term Y) (term V) Store) #t)))
    (--> ((in-hole E X) S)
         ((in-hole E ,(store-lookup (term X) Store)) S)
-        cs!)
-   ; Following does not implement defined semantics:
-   ; (set x v) returns v, not original value of x
+        cseq)
    (--> ((in-hole E (set X V)) S)
-        ((in-hole E ,(store-lookup (term X) Store)) S)
-        cseq
-        (side-condition
-         (begin (store-update! (term X) (term V) Store) #t)))
+        ((in-hole E ,(update-and-return-prior! (term X) (term V) Store)) S)
+        cs!)
    (--> ((in-hole E (o V ...)) S)
         ((in-hole E (δ (o V ...))) S)
         csffi)
+   (--> ((in-hole E (seq M)) S)
+        ((in-hole E M) S)
+        seq-last)
+   (--> ((in-hole E (seq M M_i ...)) S)
+        ((in-hole E ((λ Y (seq M_i ...)) M)) S)
+        seq-n
+        (fresh Y)
+        (side-condition
+         (<= 1 (length (term (M_i ...))))))
+   (--> ((in-hole E (let () in M)) S)
+        ((in-hole E M) S)
+        let-empty)
+   (--> ((in-hole E (let ((X = M_v) (X_i = M_i) ...) in M)) S)
+        ((in-hole E ((λ X (let ((X_i = M_i) ...) in M)) M_v)) S)
+        let-n)
    ))
 
-; ------ Testing tools -----
+; ------ Testing  tools -----
 
 (define (test-AV)
   ; Expressions with no assignable variables
@@ -99,4 +121,7 @@
 
 (define (test-basics)
   (run-basic-tests run-cs-test))
+
+(define (test-state)
+  (run-state-tests run-cs-test))
 

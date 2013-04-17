@@ -14,6 +14,7 @@
   (set-list (filter (lambda (v) (not (equal? v except))) lvar)))
 
 (define (set-union lsets)
+  (begin ;(printf "lsets ~s" lsets)
   (letrec [(add-list (lambda (set lv)
                     (if (null? lv)
                         set
@@ -22,12 +23,13 @@
                          (cdr lv)))))
         (union-two (lambda (a b)
                      (add-list a (hash-keys b))))]
-    (foldl union-two (make-hash) lsets)))
+    (foldl union-two (make-hash) lsets))))
 
 (define (set-diff a b)
+  (begin ;(printf "a ~s b ~s" a b)
   (let [(deleted 
          (foldl (lambda (del set) (hash-set set del #f)) a (hash-keys b)))]
-    (set-list (filter (lambda (n) (hash-ref deleted n)) (hash-keys deleted)))))
+    (set-list (filter (lambda (n) (hash-ref deleted n)) (hash-keys deleted))))))
 
 (define (set-lookup val set)
   (hash-ref set val #f))
