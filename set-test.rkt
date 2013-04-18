@@ -66,6 +66,12 @@
  (set-diff tt a)
  (set-list (term (q z))))
 
+(check-expect
+ (foldl (lambda (v s) (hash-set s v #t))
+        (make-immutable-hash)
+        (set-to-list tt))
+ (set-list '(a b c d q z)))
+
 (test)
 
 

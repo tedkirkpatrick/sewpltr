@@ -1,5 +1,10 @@
 #lang racket
 (require redex)
+(provide (except-out (all-defined-out)
+                     ; Don't export Store because module variables cannot be assigned from outside
+                     Store
+                     update-and-return-prior!
+                     cs-red))
 
 (require "set.rkt")
 (require "store.rkt")
