@@ -3,7 +3,7 @@
 (provide (except-out (all-defined-out)
                      ; Don't export Store because module variables cannot be assigned from outside
                      Store
-                     update-and-return-prior!
+                     ;update-and-return-prior!
                      cs-red))
 
 (require "set.rkt")
@@ -18,7 +18,7 @@
   ; primitive forms, which in turn are in E
   (E .... (set X E))
   (V b (λ X M))
-  (St Uninit S)
+  (St Uninit S (S[X]) (S[X <- V]))
   )
 
 (define-metafunction/extension FV state-iswim
@@ -39,21 +39,30 @@
   [(AV (let ((X = M_v) ...) in M)) ,(set-union (term ((AV M_v) ... (AV M))))]
   )
 
-(define Store (store-make))
+(define store (new Store%))
 
-(define (update-and-return-prior! var val store)
-  (begin0
-    (store-lookup var store)
-    (store-update! var val store)))
+; Sigh. Sigh. Because I am creating metafunctions with side-effects,
+; I have to turn metafunction caching off.
+; This is likely a killer for the entire store-as-metafunction approach,
+; but I'm going toj do it now just to see how the design works out
+; otherwise.
+(caching-enabled? #f)
+
+(define Store #f) ; DEBUG just to prevent errors for now
+
+(define-metafunction state-iswim
+  [(Σ Uninit) S (side-condition (begin (send store clear) #t))]
+  [(Σ (S[X])) ,(send store lookup (term X))]
+  [(Σ (S[X <- V])) ,(begin0 (send store lookup (term X))
+                            (send store update! (term X) (term V)))]
+  )
 
 (define cs-red
   (reduction-relation
    state-iswim
    (--> (any Uninit)
-        (any S)
-        init-store
-        (side-condition
-         (begin (set! Store (store-make)) #t)))
+        (any (Σ Uninit))
+        init-store)
    (--> ((in-hole E ((λ X M) V)) S)
         ((in-hole E (subst M X V)) S)
         csfiv
@@ -74,9 +83,9 @@
   (--> ((in-hole E X) S)
         ((in-hole E ,(store-lookup (term X) Store)) S)
         cseq)
-   (--> ((in-hole E (set X V)) S)
-        ((in-hole E ,(update-and-return-prior! (term X) (term V) Store)) S)
-        cs!)
+;   (--> ((in-hole E (set X V)) S)
+;        ((in-hole E ,(update-and-return-prior! (term X) (term V) Store)) S)
+;        cs!)
    (--> ((in-hole E (o V ...)) S)
         ((in-hole E (δ (o V ...))) S)
         csffi)

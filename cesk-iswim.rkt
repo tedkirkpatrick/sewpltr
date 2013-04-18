@@ -43,6 +43,9 @@
    (--> (((M N) ε) S κ)
         ((M ε) S (ar (N ε) κ))
         cesk1)
+   (--> (((o M N ...) ε) S κ)
+        ((M ε) S (op (o) ((N ε) ...) κ))
+        cesk2)
    (--> ((V ε) S (fn ((λ X M) ε_f) κ))
         ((M (update ε X ς_n)) S κ)
         cesk3

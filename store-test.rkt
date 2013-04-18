@@ -41,4 +41,40 @@
  (sort (symbols-to-strings (store-vars st1)) string<?)
  (list "a" "b"))
 
+(define st (new Store%))
+
+(check-expect
+ (send st lookup (term x))
+ #f)
+
+(check-expect
+ (begin
+   (send st update! (term x) 5)
+   (send st clear)
+   (send st update! (term y) 5)
+   (sort (symbols-to-strings (send st vars)) string<?))
+ (list "y"))
+
+(check-expect
+ (begin
+   (send st update! (term x) (term (+ 1 1)))
+   (send st lookup (term x)))
+ (term (+ 1 1)))
+
+(check-expect
+ (begin
+   (send st update! (term y) (term (λ x x)))
+   (send st size))
+ 2)
+
+(check-expect
+ (begin
+   (send st update! (term x) (term ((λ x x) 1)))
+   (send st lookup (term x)))
+ (term ((λ x x) 1)))
+
+(check-expect
+ (sort (symbols-to-strings (send st vars)) string<?)
+ (list "x" "y"))
+
 (test)
