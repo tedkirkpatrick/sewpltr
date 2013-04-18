@@ -1,15 +1,18 @@
 #lang racket
 (require redex)
+
 (provide (except-out (all-defined-out)
-                     ; Don't export Store because module variables cannot be assigned from outside
+                     ; Don't export because module variables cannot be assigned from outside
                      Store
                      update-and-return-prior!
-                     cs-red))
+                     cs-red)
+         (all-from-out "iswim.rkt"))
 
 (require "set.rkt")
 (require "store.rkt")
 
 (require "iswim.rkt")
+
 
 (define-extended-language state-iswim
   iswim
@@ -99,51 +102,53 @@
         let-n)
    ))
 
-; ------ Testing  tools -----
-(require "basic-iswim-test.rkt")
-(require "state-iswim-test.rkt")
-
-(define (test-AV)
-  ; Expressions with no assignable variables
-  (test-equal (term (AV x)) (set-empty))
-  (test-equal (term (AV (λ x (+ y z)))) (set-empty))
-  (test-equal (term (AV ((+ 2 1) (x y)))) (set-empty))
-  (test-equal (term (AV (set x (+ y z)))) (set-singleton (term x)))
-  (test-equal (term (AV 0)) (set-empty))
-  (test-equal (term (AV (+ x y))) (set-empty))
+; ------ Testing  module -----
+(module+ test
+  (require "basic-iswim-test.rkt")
+  (require "state-iswim-test.rkt")
   
-  ; Expressions with assignable variables
-  (test-equal (term (AV (λ y (set x (add1 y))))) (set-singleton (term x)))
-  (test-equal (term (AV (λ x (set x (add1 z))))) (set-empty))
-  (test-equal (term (AV ((set x y) (set z q)))) (set-list (term (x z))))
-  
-  ; seq and let
-  (test-equal (term (AV (let ((x = 1) (y = 2)) in (seq (+ 1 2))))) (set-empty))
-  (test-equal (term (AV (let ((x = 1) (y = 2)) in (seq (set x (+ 1 2)) (set y 5)))))
-              (set-list (term (x y))))
-  (test-results))
-
-(define (run-test red tm val)
-  (let [(res (apply-reduction-relation* red
-                                        (term (,tm Uninit))))
-        (same? (lambda (res)
-                 (and
-                  (equal? (length res) 1)
-                  (equal? (caar res) val))))]
+  (define (test-AV)
+    ; Expressions with no assignable variables
+    (test-equal (term (AV x)) (set-empty))
+    (test-equal (term (AV (λ x (+ y z)))) (set-empty))
+    (test-equal (term (AV ((+ 2 1) (x y)))) (set-empty))
+    (test-equal (term (AV (set x (+ y z)))) (set-singleton (term x)))
+    (test-equal (term (AV 0)) (set-empty))
+    (test-equal (term (AV (+ x y))) (set-empty))
     
-    (test-predicate same? res)))
-
-(define (run-cs-test tm val)
-  (run-test cs-red tm val))
-
-(define (test-basics)
-  (run-basic-tests run-cs-test))
-
-(define (test-state)
-  (run-state-tests run-cs-test))
-
-(define (test-all)
-  (printf "AV:     ") (test-AV)
-  (printf "basics: ") (test-basics)
-  (printf "state:  ") (test-state))
-
+    ; Expressions with assignable variables
+    (test-equal (term (AV (λ y (set x (add1 y))))) (set-singleton (term x)))
+    (test-equal (term (AV (λ x (set x (add1 z))))) (set-empty))
+    (test-equal (term (AV ((set x y) (set z q)))) (set-list (term (x z))))
+    
+    ; seq and let
+    (test-equal (term (AV (let ((x = 1) (y = 2)) in (seq (+ 1 2))))) (set-empty))
+    (test-equal (term (AV (let ((x = 1) (y = 2)) in (seq (set x (+ 1 2)) (set y 5)))))
+                (set-list (term (x y))))
+    (test-results))
+  
+  (define (run-test red tm val)
+    (let [(res (apply-reduction-relation* red
+                                          (term (,tm Uninit))))
+          (same? (lambda (res)
+                   (and
+                    (equal? (length res) 1)
+                    (equal? (caar res) val))))]
+      
+      (test-predicate same? res)))
+  
+  (define (run-cs-test tm val)
+    (run-test cs-red tm val))
+  
+  (define (test-basics)
+    (run-basic-tests run-cs-test))
+  
+  (define (test-state)
+    (run-state-tests run-cs-test))
+  
+  (define (test-all)
+    (printf "AV:     ") (test-AV)
+    (printf "basics: ") (test-basics)
+    (printf "state:  ") (test-state))
+  
+  (test-all))
