@@ -11,7 +11,8 @@
   ((M N L K) .... (set X M) (seq M M_i ...) (let ((X = M_v) ...) in M))
   ; I do not put let and seq in E because the reduction rule converts them to more
   ; primitive forms, which in turn are in E
-  (E .... (set X E))  
+  (E .... (set X E))
+  (V b (λ X M))
   (St Uninit S)
   )
 
@@ -71,8 +72,8 @@
    (--> ((in-hole E (set X V)) S)
         ((in-hole E ,(update-and-return-prior! (term X) (term V) Store)) S)
         cs!)
-   (--> ((in-hole E (o b ...)) S)
-        ((in-hole E (δ (o b ...))) S)
+   (--> ((in-hole E (o V ...)) S)
+        ((in-hole E (δ (o V ...))) S)
         csffi)
    ; Implement seq in reduction relation
    (--> ((in-hole E (seq M)) S)
