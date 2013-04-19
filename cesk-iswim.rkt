@@ -9,7 +9,7 @@
 (define-extended-language cesk-iswim
   state-iswim
   (Cl (V ε)) ; Closure
-  (κ mt (fn Cl κ) (ar Cl κ) (op (Cl ... o) ((M ε) ...) κ) (set σ κ))
+  (κ mt (fn (M ε) κ) (ar (M ε) κ) (op (Cl ... o) ((M ε) ...) κ) (set σ κ))
   (Ev (X σ))
   (ε (Ev ...))
   (σ variable-not-otherwise-mentioned)
@@ -74,7 +74,7 @@
         ((M ε) S (set (lookup X ε) κ))
         cesk8)
    (--> (Cl S (set σ κ))
-        (,(update-and-return-prior! (term σ) (term Cl) Store) S x)
+        (,(update-and-return-prior! (term σ) (term Cl) Store) S κ)
         cesk9)
    ; Implement seq in reduction relation
    (--> (((seq M) ε) S κ)
@@ -86,13 +86,13 @@
         (fresh Y)
         (side-condition
          (<= 1 (length (term (M_i ...))))))
-;   ; Implement let in reduction relation
-;   (--> ((in-hole E (let () in M)) S)
-;        ((in-hole E M) S)
-;        let-empty)
-;   (--> ((in-hole E (let ((X = M_v) (X_i = M_i) ...) in M)) S)
-;        ((in-hole E ((λ X (let ((X_i = M_i) ...) in M)) M_v)) S)
-;        let-n)
+   ; Implement let in reduction relation
+   (--> (((let () in M) ε) S κ)
+        ((M ε) S κ)
+        let-empty)
+   (--> (((let ((X = M_v) (X_i = M_i) ...) in M) ε) S κ)
+        ((((λ X (let ((X_i = M_i) ...) in M)) M_v) ε) S κ)
+        let-n)
    ))
 
 ; ------ Testing  module -----
@@ -107,6 +107,7 @@
           (same? (lambda (res)
                    (and
                     (equal? (length res) 1)
+                    (list? (caar res))
                     (equal? (caaar res) val))))]
       
       (test-predicate same? res)))
@@ -122,8 +123,7 @@
   
   (define (test-all)
     (printf "basics: ") (test-basics)
-    ;(printf "state:  ") (test-state))
-  )
+    (printf "state:  ") (test-state))
   (test-all))
 
 
