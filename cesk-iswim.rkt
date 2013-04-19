@@ -25,6 +25,8 @@
   [(lookup X ((Y σ) Ev ...)) (lookup X (Ev ...))]
   )
 
+; Implementation of store
+
 (define Store (store-make))
 
 (define (update-and-return-prior! var val store)
@@ -40,6 +42,12 @@
 (define (fresh-σ)
   (term ,(begin0 (string->symbol (format "σ_~v" next-σ)) (set! next-σ (+ next-σ 1)))))
 
+(define (init-store)
+  (set! Store (store-make))
+  (set! next-σ 0))
+
+; CESK reduction relation 
+
 (define cesk-red
   (reduction-relation
    cesk-iswim
@@ -47,7 +55,7 @@
         ((any ε) S κ)
         init-store
         (side-condition
-         (begin (set! Store (store-make)) #t)))
+         (begin (init-store) #t)))
    (--> (((M N) ε) S κ)
         ((M ε) S (ar (N ε) κ))
         cesk1)
