@@ -25,4 +25,10 @@
   
   ; Arguments evaluated in left to right order
   (test (term (let ((x = 1)) in (+ (set x 2) x))) 3)
+  
+  ; Complex nested expression (but all variables used within lexical scope)
+  (test (term (let ((out = 1)) in (seq (let ((inner = 2)) in (set out (add1 inner))) (add1 out)))) 4)
+
+  ; Variable location retained in a closure and used out of lexical scope
+  (test (term (let ((out = 1)) in (seq (let ((inner = 2)) in (set out (λ x (+ x inner)))) (out 5)))) 7)
   (test-results))

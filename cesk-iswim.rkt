@@ -32,6 +32,14 @@
     (store-lookup var store)
     (store-update! var val store)))
 
+; Mechanism to generate fresh storage locations.
+; Can't use redex "fresh" clause of a reduction relation because that reuses
+; names when they have left scope ("fresh" only guarantees the name doesn't occur in
+; the term currently begin reduced).
+(define next-σ 0)
+(define (fresh-σ)
+  (term ,(begin0 (string->symbol (format "σ_~v" next-σ)) (set! next-σ (+ next-σ 1)))))
+
 (define cesk-red
   (reduction-relation
    cesk-iswim
@@ -49,9 +57,9 @@
    (--> ((V ε) S (fn ((λ X M) ε_f) κ))
         ((M (update ε_f X σ_n)) S κ)
         cesk3
+        (where σ_n ,(fresh-σ))
         (side-condition
          (not (redex-match cesk-iswim X (term V))))
-        (fresh σ_n)
         (side-condition
          (begin (store-update! (term σ_n) (term (V ε)) Store) #t)))
    (--> ((V ε_v) S (ar (N ε_n) κ))
