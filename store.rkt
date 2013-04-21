@@ -1,5 +1,5 @@
 #lang racket
-(provide store-make store-lookup store-update! store-size store-vars)
+(provide store-make store-lookup store-update! store-delete! store-size store-vars)
 
 (define (store-make)
   (make-hash))
@@ -9,6 +9,9 @@
 
 (define (store-update! id val st)
   (hash-set! st id val))
+
+(define (store-delete! id st)
+  (hash-remove! st id))
 
 (define (store-size st)
   (hash-count st))

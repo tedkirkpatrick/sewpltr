@@ -41,4 +41,8 @@
  (sort (symbols-to-strings (store-vars st1)) string<?)
  (list "a" "b"))
 
+(check-expect
+ (begin (store-delete! (term a) st1) (store-vars st1))
+ (list 'b))
+
 (test)
