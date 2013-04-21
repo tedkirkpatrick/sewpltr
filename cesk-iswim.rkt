@@ -78,8 +78,8 @@
    (--> ((b_m ε_m) S (op ((b ε) ... o) () κ))
         (((δ ,(reverse (term (b_m b ... o)))) ()) S κ)
         cesk5)
-   (--> ((V ε_v) S (op         (Cl ... o)   ((N ε_n) (M ε_m) ...) κ))
-        ((N ε_n) S (op ((V ε_v) Cl ... o)         ((M ε_m) ...) κ))
+   (--> ((V ε_v) S (op (        Cl ... o) ((N ε_n) (M ε_m) ...) κ))
+        ((N ε_n) S (op ((V ε_v) Cl ... o) (        (M ε_m) ...) κ))
         cesk6
         (side-condition
          (not (redex-match cesk-iswim X (term V)))))
