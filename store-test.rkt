@@ -45,4 +45,9 @@
  (begin (store-delete! (term a) st1) (store-vars st1))
  (list 'b))
 
+(check-expect
+ (with-handlers ([exn:fail? (lambda (v) #t)])
+   (store-delete! (term ffff) st1))
+ #t)
+
 (test)

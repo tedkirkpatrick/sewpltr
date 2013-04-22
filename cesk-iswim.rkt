@@ -1,3 +1,15 @@
+;
+; Version of CESK machine that implements stack allocation for
+; local variables.  Some tests require full closures; the test
+; module passes #f to the test sequences to exclude tests
+; requiring full closures.
+;
+; For debugging and tracing purposes, the code does not actually
+; reclaim and reallocate locations deleted from the store.  Instead,
+; they are never used again.  But an implementation could reclaim
+; the locations at the points where "unstack" is called.
+;
+
 #lang racket
 (require redex)
 
@@ -9,7 +21,7 @@
 (define-extended-language cesk-iswim
   state-iswim
   (Cl (V ε)) ; Closure
-  (κ mt (fn (M ε) κ) (ar (M ε) κ) (op (Cl ... o) ((M ε) ...) κ) (set σ κ) (frame X κ))
+  (κ mt (fn (M ε) κ) (ar (M ε) κ) (op (Cl ... o) ((M ε) ...) κ) (set σ κ) (frame σ κ))
   (Ev (X σ))
   (ε (Ev ...))
   (σ variable-not-otherwise-mentioned)
@@ -46,16 +58,16 @@
   (set! Store (store-make))
   (set! next-σ 0))
 
+; If the rule completes a frame, pop it off the stack and
+; deallocate its location from the store
 (define (unstack env context)
-  (let [(match (redex-match cesk-iswim (frame X κ) context))
-        (var-name (lambda (mls) (bind-name (car (match-bindings (car mls))))))
-        (con-val (lambda (mls) (bind-exp (cadr (match-bindings (car mls))))))]
+  (let [(match (redex-match cesk-iswim (frame σ κ) context))
+        (σ_f (lambda (mls) (bind-exp (cadr (match-bindings (car mls))))))
+        (κ_f (lambda (mls) (bind-exp (car (match-bindings (car mls))))))]
     (if match
         (if (equal? 1 (length match))
             (begin
-;              (when (null? env)
-;                (printf "Null environment ~s" match))             
-              (begin (store-delete! (var-name match) Store) (con-val match)))
+              (begin (store-delete! (σ_f match) Store) (κ_f match)))
             (raise (list "Multiple matches for" context match)))
         context)))
 
@@ -76,22 +88,22 @@
         ((M ε) S (op (o) ((N ε) ...) κ))
         cesk2)
    (--> ((V ε) S (fn ((λ X M) ε_f) κ))
-        ((M (update ε_f X σ_n)) S (frame X ,(unstack (term ε) (term κ))))
+        ((M (update ε_f X σ_n)) S (frame σ_n κ))
         cesk3
         (where σ_n ,(fresh-σ))
         (side-condition
          (not (redex-match cesk-iswim X (term V))))
         (side-condition
          (begin (store-update! (term σ_n) (term (V ε)) Store) #t)))
-   (--> ((V ε) S (frame X κ))
-        ((V ε) S κ)
+   (--> ((V ε) S (frame σ κ))
+        ((V ε) S ,(unstack (term ε) (term (frame σ κ))))
         pop-frame)
    (--> ((V ε_v) S (ar (N ε_n) κ))
         ((N ε_n) S (fn (V ε_v) κ))
         cesk4
         (side-condition
          (not (redex-match cesk-iswim X (term V)))))
-   (--> ((b_m ε_m) S (op ((b ε) ... o) () κ)) ; LOSS (but environment irrelevant
+   (--> ((b_m ε_m) S (op ((b ε) ... o) () κ))
         (((δ ,(reverse (term (b_m b ... o)))) ()) S ,(unstack (term ε_m) (term κ)))
         cesk5)
    (--> ((V ε_v) S (op (        Cl ... o) ((N ε_n) (M ε_m) ...) κ))
@@ -99,7 +111,7 @@
         cesk6
         (side-condition
          (not (redex-match cesk-iswim X (term V)))))
-   (--> ((X ε) S κ)  ; LOSS of environment for variable
+   (--> ((X ε) S κ)
         (,(store-lookup (term (lookup X ε)) Store) S ,(unstack (term ε) (term κ)))
         cesk7)
    (--> (((set X M) ε) S κ)
@@ -142,17 +154,17 @@
                     (equal? (length res) 1)
                     (list? (caar res))
                     (equal? (caaar res) val))))]
-      
+      (when (not (same? res)) (printf "term: ~s" tm))
       (test-predicate same? res)))
-  
+
   (define (run-cesk-test tm val)
     (run-test cesk-red tm val))
   
   (define (test-basics)
-    (run-basic-tests run-cesk-test))
+    (run-basic-tests run-cesk-test #f))
   
   (define (test-state)
-    (run-state-tests run-cesk-test))
+    (run-state-tests run-cesk-test #f))
   
   (define (test-all)
     (printf "basics: ") (test-basics)

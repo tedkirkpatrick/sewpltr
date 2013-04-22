@@ -3,7 +3,7 @@
 
 (provide run-state-tests)
 
-(define (run-state-tests test)
+(define (run-state-tests test [run-closures #t])
   (test (term ((λ x (set x 2)) 5)) 5)
   ; Sequencing using primitives. Next two steps refine to let ... seq ... form.
   (test (term ((λ x (((λ y1 (λ y2 y2)) (set x 3)) x)) 1)) 3)
@@ -30,5 +30,5 @@
   (test (term (let ((out = 1)) in (seq (let ((inner = 2)) in (set out (add1 inner))) (add1 out)))) 4)
 
   ; Variable location retained in a closure and used out of lexical scope
-  (test (term (let ((out = 1)) in (seq (let ((inner = 2)) in (set out (λ x (+ x inner)))) (out 5)))) 7)
+  (when run-closures (test (term (let ((out = 1)) in (seq (let ((inner = 2)) in (set out (λ x (+ x inner)))) (out 5)))) 7))
   (test-results))

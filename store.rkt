@@ -11,7 +11,9 @@
   (hash-set! st id val))
 
 (define (store-delete! id st)
-  (hash-remove! st id))
+  (if (store-lookup id st)
+      (hash-remove! st id)
+      (raise-argument-error 'store-delete! "id" id)))
 
 (define (store-size st)
   (hash-count st))
