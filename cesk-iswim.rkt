@@ -66,8 +66,7 @@
         (κ_f (lambda (mls) (bind-exp (car (match-bindings (car mls))))))]
     (if match
         (if (equal? 1 (length match))
-            (begin
-              (begin (store-delete! (σ_f match) Store) (κ_f match)))
+            (begin (store-delete! (σ_f match) Store) (κ_f match))
             (raise (list "Multiple matches for" context match)))
         (raise (list "No match for" context match)))))
 
