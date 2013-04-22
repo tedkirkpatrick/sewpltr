@@ -58,7 +58,7 @@
   (set! Store (store-make))
   (set! next-σ 0))
 
-; If the rule completes a frame, pop it off the stack and
+; Pop a frame off the stack and
 ; deallocate its location from the store
 (define (unstack env context)
   (let [(match (redex-match cesk-iswim (frame σ κ) context))
@@ -69,7 +69,7 @@
             (begin
               (begin (store-delete! (σ_f match) Store) (κ_f match)))
             (raise (list "Multiple matches for" context match)))
-        context)))
+        (raise (list "No match for" context match)))))
 
 ; CESK reduction relation 
 
@@ -104,7 +104,7 @@
         (side-condition
          (not (redex-match cesk-iswim X (term V)))))
    (--> ((b_m ε_m) S (op ((b ε) ... o) () κ))
-        (((δ ,(reverse (term (b_m b ... o)))) ()) S ,(unstack (term ε_m) (term κ)))
+        (((δ ,(reverse (term (b_m b ... o)))) ()) S κ)
         cesk5)
    (--> ((V ε_v) S (op (        Cl ... o) ((N ε_n) (M ε_m) ...) κ))
         ((N ε_n) S (op ((V ε_v) Cl ... o) (        (M ε_m) ...) κ))
@@ -112,7 +112,7 @@
         (side-condition
          (not (redex-match cesk-iswim X (term V)))))
    (--> ((X ε) S κ)
-        (,(store-lookup (term (lookup X ε)) Store) S ,(unstack (term ε) (term κ)))
+        (,(store-lookup (term (lookup X ε)) Store) S κ)
         cesk7)
    (--> (((set X M) ε) S κ)
         ((M ε) S (set (lookup X ε) κ))
